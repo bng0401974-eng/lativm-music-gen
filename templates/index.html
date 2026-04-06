@@ -1,61 +1,43 @@
-<!DOCTYPE html>
-<html lang="mk">
-<head>
-    <meta charset="UTF-8">
-    <title>LATIVM AI Music Generator</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
-        .container { background: white; padding: 30px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        #status { margin-top: 20px; color: #555; }
-        audio { margin-top: 20px; width: 100%; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>LATIVM-Web AI</h1>
-        <input type="text" id="prompt" placeholder="Напиши опис (пр. Funky bassline)">
-        <button id="generateBtn">Генерирај</button>
-
-        <div id="status"></div>
-        <div id="result"></div>
-    </div>
-
-    <script>
-        document.getElementById('generateBtn').onclick = function() {
-            const promptValue = document.getElementById('prompt').value;
-            const statusDiv = document.getElementById('status');
-            const resultDiv = document.getElementById('result');
-            const btn = this;
-
-            if(!promptValue) return alert("Внеси опис!");
-
-            statusDiv.innerText = "Генерирам... Ова може да потрае 2-5 минути на Machine 1.";
-            btn.disabled = true;
-            resultDiv.innerHTML = "";
-
-            fetch('/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: promptValue })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.status === "success") {
-                    statusDiv.innerText = "Готово!";
-                    resultDiv.innerHTML = `<audio controls src="${data.audio_url}?t=${new Date().getTime()}"></audio>`;
-                } else {
-                    statusDiv.innerText = "Грешка: " + data.message;
-                }
-                btn.disabled = false;
-            })
-            .catch(err => {
-                statusDiv.innerText = "Настана грешка при комуникација со серверот.";
-                btn.disabled = false;
-            });
-        };
-    </script>
-</body>
-</html>
+<style>
+    body {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        text-align: center;
+        padding: 50px;
+    }
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: #252525;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #d4af37; /* Златна рамка */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    h1 {
+        color: #d4af37;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+    }
+    input[type="text"] {
+        width: 80%;
+        padding: 12px;
+        border-radius: 5px;
+        border: none;
+        margin-bottom: 20px;
+    }
+    button {
+        background-color: #d4af37;
+        color: #1a1a1a;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    button:hover {
+        background-color: #b8860b;
+    }
+</style>
