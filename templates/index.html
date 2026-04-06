@@ -1,43 +1,84 @@
-<style>
-    body {
-        background-color: #1a1a1a;
-        color: #e0e0e0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        text-align: center;
-        padding: 50px;
-    }
-    .container {
-        max-width: 800px;
-        margin: auto;
-        background: #252525;
-        padding: 30px;
-        border-radius: 15px;
-        border: 1px solid #d4af37; /* Златна рамка */
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    h1 {
-        color: #d4af37;
-        letter-spacing: 5px;
-        text-transform: uppercase;
-    }
-    input[type="text"] {
-        width: 80%;
-        padding: 12px;
-        border-radius: 5px;
-        border: none;
-        margin-bottom: 20px;
-    }
-    button {
-        background-color: #d4af37;
-        color: #1a1a1a;
-        padding: 12px 30px;
-        border: none;
-        border-radius: 5px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    button:hover {
-        background-color: #b8860b;
-    }
-</style>
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>LATIVM - Audio AI Engine</title>
+    <style>
+        body {
+            background: radial-gradient(circle at top, #1e293b, #0f172a);
+            color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
+        }
+        .app-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem; border-radius: 24px; width: 450px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; letter-spacing: 2px; color: #818cf8; }
+        .subtitle { color: #94a3b8; margin-bottom: 2rem; font-size: 0.9rem; }
+        input[type="text"] {
+            width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #334155;
+            background: #1e293b; color: white; margin-bottom: 1rem; box-sizing: border-box;
+        }
+        .slider-box { text-align: left; margin-bottom: 1.5rem; }
+        label { font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 5px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        button {
+            width: 100%; padding: 16px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        #loader { display: none; margin: 20px 0; color: #818cf8; font-style: italic; }
+        audio { width: 100%; margin-top: 2rem; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>LATIVM</h1>
+        <div class="subtitle">ENGINE FOR AI AUDIO GENERATION</div>
+
+        <input type="text" id="prompt" placeholder="Опиши го звукот...">
+
+        <div class="slider-box">
+            <label>ТРАЕЊЕ: <span id="durVal">8</span> секунди</label>
+            <input type="range" id="duration" min="5" max="20" value="8" oninput="document.getElementById('durVal').innerText=this.value">
+        </div>
+
+        <button onclick="generate()">ГЕНЕРИРАЈ МАГИЈА</button>
+
+        <div id="loader">⚙️ Моделот се загрева, почекај...</div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function generate() {
+            const prompt = document.getElementById('prompt').value;
+            const duration = document.getElementById('duration').value;
+            if(!prompt) return alert("Внеси опис!");
+
+            document.getElementById('loader').style.display = "block";
+            document.getElementById('result').innerHTML = "";
+
+            try {
+                const resp = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ prompt, duration })
+                });
+                const data = await resp.json();
+                if(data.audio) {
+                    document.getElementById('result').innerHTML = `
+                        <audio controls autoplay>
+                            <source src="data:audio/wav;base64,${data.audio}" type="audio/wav">
+                        </audio>
+                    `;
+                }
+            } catch(e) { alert("Грешка при генерирање"); }
+            finally { document.getElementById('loader').style.display = "none"; }
+        }
+    </script>
+</body>
+</html>

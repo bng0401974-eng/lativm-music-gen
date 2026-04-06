@@ -1,52 +1,36 @@
-import os
+from flask import Flask, render_template, request, jsonify
 import torch
-import scipy.io.wavfile
-from flask import Flask, request, render_template, jsonify
 from audiocraft.models import MusicGen
+import base64
+import io
+import scipy.io.wavfile
 
 app = Flask(__name__)
 
-# Креирање папка за аудио
-audio_dir = os.path.join('static', 'audio')
-if not os.path.exists(audio_dir):
-    os.makedirs(audio_dir)
-
-print("--- Вчитувам MusicGen модел (Small)... ---")
+# Инстанцирање на моделот
+print("--- Вчитувам LATIVM MusicGen ---")
+device = "cuda" if torch.cuda.is_available() else "cpu"
 model = MusicGen.get_pretrained('facebook/musicgen-small')
-
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-
 @app.route('/generate', methods=['POST'])
 def generate():
-    try:
-        data = request.get_json()
-        prompt = data.get('prompt', 'LATIVM beat')
+    data = request.json
+    prompt = data.get('prompt', '')
+    duration = int(data.get('duration', 8))
 
-        # 8 секунди за подобар квалитет
-        model.set_generation_params(duration=8)
-        wav = model.generate([prompt], progress=True)
+    model.set_generation_params(duration=duration)
+    wav = model.generate([prompt])
 
-        audio_data = wav[0].cpu().numpy()
-        sampling_rate = 32000
+    byte_io = io.BytesIO()
+    # MusicGen користи 32000Hz по стандард
+    scipy.io.wavfile.write(byte_io, 32000, wav[0, 0].cpu().numpy())
+    audio_b64 = base64.b64encode(byte_io.getvalue()).decode('utf-8')
 
-        file_name = "generated_output.wav"
-        full_path = os.path.join(audio_dir, file_name)
-
-        # Scipy е најсигурен за CPU средини
-        scipy.io.wavfile.write(full_path, sampling_rate, audio_data.T)
-
-        return jsonify({
-            "status": "success",
-            "audio_url": f"/static/audio/{file_name}"
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
+    return jsonify({'audio': audio_b64})
 
 if __name__ == '__main__':
-    # ОБАВЕЗНО порта 7860 за Hugging Face
     app.run(host='0.0.0.0', port=7860)
