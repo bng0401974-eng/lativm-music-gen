@@ -1,15 +1,16 @@
-name: Sync to Hugging Face
+name: Sync to Hugging Face space
 on:
   push:
     branches: [main]
 jobs:
-  sync:
+  sync-to-hub:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Push to HF
+          lfs: true
+      - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://Dame1612:$HF_TOKEN@huggingface.co/spaces/Dame1612/lativm-music-gen main
+        run: git push --force https://bng0401974-eng:$HF_TOKEN@huggingface.co/spaces/Dame1612/lativm-music-gen main
