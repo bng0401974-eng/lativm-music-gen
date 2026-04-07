@@ -7,3 +7,93 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
+<body>
+    <div class="app-container">
+        <h1>LATIVM 🏛️</h1>
+        <div class="subtitle">AI Audio Production Studio</div>
+
+        <div class="control-group">
+            <label>1. Опис на композиција (Prompt)</label>
+            <textarea id="prompt" placeholder="Опиши жанр, инструменти, емоција (пр: Cinematic techno with heavy bass)..."></textarea>
+        </div>
+
+        <div class="control-group">
+            <label>2. Мелодија за инспирација (Опционално)</label>
+            <div class="upload-wrapper">
+                <input type="file" id="melody_file" accept="audio/*">
+            </div>
+        </div>
+
+        <div class="slider-grid">
+            <div class="control-group">
+                <label>Траење <span class="val-badge" id="durV">15s</span></label>
+                <input type="range" id="duration" min="5" max="30" value="15"
+                       oninput="document.getElementById('durV').innerText = this.value + 's'">
+            </div>
+            <div class="control-group">
+                <label>Креативност <span class="val-badge" id="tempV">1.0</span></label>
+                <input type="range" id="temp" min="0.5" max="1.5" step="0.1" value="1.0"
+                       oninput="document.getElementById('tempV').innerText = this.value">
+            </div>
+        </div>
+
+        <button id="genBtn" onclick="generateMusic()">ГЕНЕРИРАЈ МАГИЈА</button>
+
+        <div id="status">Системот е подготвен за креација.</div>
+        <div id="result-container"></div>
+    </div>
+
+    <script>
+        async function generateMusic() {
+            const prompt = document.getElementById('prompt').value;
+            const duration = document.getElementById('duration').value;
+            const temp = document.getElementById('temp').value;
+            const status = document.getElementById('status');
+            const resultContainer = document.getElementById('result-container');
+            const btn = document.getElementById('genBtn');
+
+            if(!prompt) {
+                alert("Ве молам внесете опис за музиката!");
+                return;
+            }
+
+            // Визуелен фидбек
+            btn.disabled = true;
+            status.innerHTML = "🏛️ <b>LATIVM</b> го процесира вашиот звук...";
+            resultContainer.innerHTML = '<div class="loader"></div>'; // Можеш да додадеш CSS лоадер подоцна
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        duration: parseInt(duration),
+                        temp: parseFloat(temp)
+                    })
+                });
+
+                const data = await response.json();
+
+                if(data.audio) {
+                    status.innerText = "✅ Вашата композиција е подготвена!";
+                    resultContainer.innerHTML = `
+                        <audio controls autoplay src="data:audio/wav;base64,${data.audio}"></audio>
+                        <a href="data:audio/wav;base64,${data.audio}" download="lativm_track.wav"
+                           style="display:block; margin-top:15px; color:#6366f1; text-decoration:none; font-weight:600;">
+                           📥 Преземи ја песната
+                        </a>`;
+                } else {
+                    status.innerText = "❌ Грешка: " + (data.error || "Непознат проблем");
+                    resultContainer.innerHTML = "";
+                }
+            } catch (e) {
+                status.innerText = "❌ Грешка при поврзување со серверот.";
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
