@@ -1,16 +1,10 @@
+import os
 from flask import Flask, render_template, request, jsonify
-import torch
-from audiocraft.models import MusicGen
-import base64
-import io
-import scipy.io.wavfile
+from logic.generator import lativm_ai
 
-app = Flask(__name__)
-
-# Инстанцирање на моделот
-print("--- Вчитувам LATIVM MusicGen ---")
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model = MusicGen.get_pretrained('facebook/musicgen-small')
+app = Flask(__name__,
+            static_folder='static',
+            template_folder='templates')
 
 @app.route('/')
 def index():
@@ -18,19 +12,18 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    data = request.json
-    prompt = data.get('prompt', '')
-    duration = int(data.get('duration', 8))
+    try:
+        data = request.json
+        prompt = data.get('prompt', '')
+        duration = int(data.get('duration', 15))
+        temp = float(data.get('temp', 1.0))
 
-    model.set_generation_params(duration=duration)
-    wav = model.generate([prompt])
-
-    byte_io = io.BytesIO()
-    # MusicGen користи 32000Hz по стандард
-    scipy.io.wavfile.write(byte_io, 32000, wav[0, 0].cpu().numpy())
-    audio_b64 = base64.b64encode(byte_io.getvalue()).decode('utf-8')
-
-    return jsonify({'audio': audio_b64})
+        audio_b64 = lativm_ai.generate_audio(prompt, duration, temp)
+        return jsonify({'audio': audio_b64})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=7860)
+    # Hugging Face и други сервери ја користат променливата PORT
+    port = int(os.environ.get("PORT", 7860))
+    app.run(host='0.0.0.0', port=port)
